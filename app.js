@@ -1,163 +1,112 @@
-// --- NEW UTILITY FUNCTION: ODDS TO PROBABILITY ---
-function calculateImpliedProbability(odds) {
-    if (odds < 0) {
-        // Favorite (Negative Odds): (-odds) / ((-odds) + 100) * 100
-        return (-odds) / ((-odds) + 100) * 100;
-    } else if (odds > 0) {
-        // Underdog (Positive Odds): 100 / (odds + 100) * 100
-        return 100 / (odds + 100) * 100;
-    }
-    return 50.0; // Assume 50% for 0 odds (push/tie)
-}
+// --- CONFIG ---
+const oddsAPIKey = "6d667177117b78ce8b2c728ee4721cb9";
+const balldontlieURL = "https://www.balldontlie.io/api/v1/games";
+let oddsAPIUsed = 0;
+let balldontlieUsed = 0;
 
-// Mock Data (Updated to simulate The Odds API structure)
+// --- MOCK DATA (backup) ---
 const mockGames = [
   {
-    home: "Yankees",
-    away: "Red Sox",
-    h2h: "50%",
-    pitcher: "Strong",
-    last10: "7-3",
-    recommendation: "Home",
-    // --- MOCK ODDS ADDED ---
-    bookmakers: [{
-        title: "BetMGM",
-        markets: [{
-            key: "h2h",
-            outcomes: [
-                { name: "New York Yankees", price: -150 }, // Home
-                { name: "Boston Red Sox", price: 130 },   // Away
-            ]
-        }]
-    }]
+    date: "2025-09-27T18:30:00Z",
+    team1: "Yankees",
+    team2: "Red Sox",
+    recommended: "Yankees",
+    odds: { team1: 1.9, team2: 1.85 }
   },
   {
-    home: "Dodgers",
-    away: "Giants",
-    h2h: "45%",
-    pitcher: "Average",
-    last10: "5-5",
-    recommendation: "Away",
-    // --- MOCK ODDS ADDED ---
-    bookmakers: [{
-        title: "FanDuel",
-        markets: [{
-            key: "h2h",
-            outcomes: [
-                { name: "Los Angeles Dodgers", price: 110 }, // Home
-                { name: "San Francisco Giants", price: -130 }, // Away
-            ]
-        }]
-    }]
+    date: "2025-09-27T21:00:00Z",
+    team1: "Dodgers",
+    team2: "Giants",
+    recommended: "Dodgers",
+    odds: { team1: 1.75, team2: 2.05 }
   }
 ];
 
-// API Keys
-const oddsApiKey = "6d667177117b78ce8b2c728ee4721cb9";
-// NOTE: Balldontlie.io is for the NBA. A better MLB API is needed for stats.
-const balldontlieApi = "03b94385-b4ec-4575-9bb8-1f5954410c64"; 
+// --- DOM Elements ---
+const gamesContainer = document.getElementById("games-container");
+const oddsapiCountEl = document.getElementById("oddsapi-count");
+const balldontlieCountEl = document.getElementById("balldontlie-count");
 
-let oddsApiCount = 0;
+// --- UTIL FUNCTIONS ---
+function formatPHTime(utcStr) {
+  const date = new Date(utcStr);
+  const phOffset = 8 * 60; // +8 hrs
+  const localDate = new Date(date.getTime() + phOffset*60000);
+  return localDate.toLocaleString();
+}
 
-// Fetch OddsAPI (example)
+function createGameCard(game) {
+  const card = document.createElement("div");
+  card.className = "game-card";
+  card.innerHTML = `
+    <h3>${game.team1} vs ${game.team2}</h3>
+    <p>Date: ${formatPHTime(game.date)}</p>
+    <p>Recommended: <span class="recommended">${game.recommended}</span></p>
+    <p>Odds: ${game.team1} (${game.odds.team1}) - ${game.team2} (${game.odds.team2})</p>
+  `;
+  return card;
+}
+
+function renderGames(games) {
+  gamesContainer.innerHTML = "";
+  games.forEach(game => {
+    gamesContainer.appendChild(createGameCard(game));
+  });
+}
+
+// --- API FETCH FUNCTIONS ---
 async function fetchOddsAPI() {
-    // Note: Use this only for debugging API counts
-    // if (oddsApiCount >= 500) return; 
-    // oddsApiCount++; 
-    
-    // Example request
-    try {
-        const res = await fetch(`https://api.the-odds-api.com/v4/sports/baseball_mlb/odds/?apiKey=${oddsApiKey}&regions=us&markets=h2h`);
-        const data = await res.json();
-        return data;
-    } catch (err) {
-        console.log("OddsAPI fetch error, using mock data.");
-        return mockGames;
-    }
+  try {
+    // NOTE: Replace with your actual API endpoint
+    const url = `https://api.the-odds-api.com/v4/sports/baseball_mlb/odds/?apiKey=${oddsAPIKey}`;
+    const res = await fetch(url);
+    oddsAPIUsed++;
+    oddsapiCountEl.textContent = oddsAPIUsed;
+    if (!res.ok) throw new Error("OddsAPI fetch error");
+    const data = await res.json();
+    // map data to our card structure
+    const games = data.map(g => ({
+      date: g.commence_time,
+      team1: g.home_team,
+      team2: g.away_team,
+      recommended: g.home_team, // simple mock logic
+      odds: { team1: g.bookmakers[0].markets[0].outcomes[0].price, team2: g.bookmakers[0].markets[0].outcomes[1].price }
+    }));
+    return games;
+  } catch (err) {
+    console.warn(err);
+    return mockGames; // fallback
+  }
 }
 
-// Fetch Ball Don't Lie API (Placeholder/To be replaced with MLB Stats API)
 async function fetchBalldontlie() {
-    try {
-        const res = await fetch(`https://www.balldontlie.io/api/v1/games`);
-        const data = await res.json();
-        return data.data;
-    } catch (err) {
-        console.log("Balldontlie fetch error, returning empty array.");
-        return [];
-    }
+  try {
+    const res = await fetch(`${balldontlieURL}`);
+    balldontlieUsed++;
+    balldontlieCountEl.textContent = balldontlieUsed;
+    if (!res.ok) throw new Error("Balldontlie fetch error");
+    const data = await res.json();
+    // map to simplified structure
+    const games = data.data.slice(0, 5).map(g => ({
+      date: g.date,
+      team1: g.home_team.full_name,
+      team2: g.visitor_team.full_name,
+      recommended: g.home_team.full_name, // simple mock logic
+      odds: { team1: 1.9, team2: 1.85 } // placeholder
+    }));
+    return games;
+  } catch (err) {
+    console.warn(err);
+    return mockGames;
+  }
 }
 
-// --- MODIFIED RENDER CARDS FUNCTION ---
-function renderCards(games) {
-    const container = document.getElementById("cards-container");
-    container.innerHTML = "";
-    
-    // Process each game to extract and calculate key data
-    games.forEach(game => {
-        let homeTeamOdds = 'N/A';
-        let awayTeamOdds = 'N/A';
-        let homeProb = 'N/A';
-        let awayProb = 'N/A';
-        let bookmakerTitle = 'N/A';
-        
-        // Find a valid bookmaker/market from the API data
-        const bookmaker = game.bookmakers && game.bookmakers[0];
-        if (bookmaker) {
-            bookmakerTitle = bookmaker.title;
-            const h2hMarket = bookmaker.markets && bookmaker.markets.find(m => m.key === 'h2h');
-            
-            if (h2hMarket && h2hMarket.outcomes) {
-                // Determine home/away odds based on team name. Uses .includes() for flexible matching.
-                const homeOutcome = h2hMarket.outcomes.find(o => o.name.includes(game.home));
-                const awayOutcome = h2hMarket.outcomes.find(o => o.name.includes(game.away));
-
-                if (homeOutcome) {
-                    homeTeamOdds = homeOutcome.price;
-                    homeProb = calculateImpliedProbability(homeTeamOdds).toFixed(1);
-                }
-                if (awayOutcome) {
-                    awayTeamOdds = awayOutcome.price;
-                    awayProb = calculateImpliedProbability(awayTeamOdds).toFixed(1);
-                }
-            }
-        }
-        
-        // --- Card Generation with New Data ---
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `
-            <h3>${game.home} vs ${game.away}</h3>
-            <p>Odds Source: ${bookmakerTitle}</p>
-            <p>
-                ${game.home} Odds: 
-                <strong>${homeTeamOdds}</strong> 
-                <span class="probability">(${homeProb}%)</span>
-            </p>
-            <p>
-                ${game.away} Odds: 
-                <strong>${awayTeamOdds}</strong> 
-                <span class="probability">(${awayProb}%)</span>
-            </p>
-            <hr>
-            <p>H2H: ${game.h2h}</p>
-            <p>Pitcher: ${game.pitcher}</p>
-            <p>Last 10: ${game.last10}</p>
-            <p>Recommendation: <strong>${game.recommendation}</strong></p>
-        `;
-        container.appendChild(card);
-    });
+// --- MAIN FUNCTION ---
+async function initDashboard() {
+  const oddsGames = await fetchOddsAPI();
+  const balldontlieGames = await fetchBalldontlie();
+  const combinedGames = [...oddsGames, ...balldontlieGames];
+  renderGames(combinedGames);
 }
 
-// Main
-async function main() {
-    const oddsData = await fetchOddsAPI();
-    const balldontlieData = await fetchBalldontlie(); // Currently not used for rendering
-
-    // Use odds data for display if available, otherwise use mockGames
-    const displayData = Array.isArray(oddsData) && oddsData.length ? oddsData.slice(0, 5) : mockGames;
-
-    renderCards(displayData);
-}
-
-main();
+initDashboard();
