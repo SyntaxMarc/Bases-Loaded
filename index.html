@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Diamond Edge</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="brand">
+    <img src="https://upload.wikimedia.org/wikipedia/en/3/3a/MLB_Logo.svg" alt="MLB">
+    <div>
+      <h1>Diamond Edge</h1>
+      <div class="sub small">Sofascore • ESPN • Oddlier • FanFuel — PH time</div>
+    </div>
+  </div>
+  <div style="text-align:right">
+    <div class="small">Local time (PH): <strong id="localTime">--:--</strong></div>
+    <div class="small" style="margin-top:6px">API calls left: <strong id="apiLeft">500</strong></div>
+  </div>
+</header>
+
+<aside class="panel">
+  <h3>Upcoming (PH time)</h3>
+  <div class="games-list" id="gamesList"></div>
+</aside>
+
+<main class="main">
+  <div class="match-card" id="matchCard">
+    <div class="match-head">
+      <div class="team-block">
+        <div style="display:flex;flex-direction:column">
+          <div class="team-name" id="teamAway">Away Team</div>
+          <div class="match-meta" id="awayPitch">Probable: —</div>
+        </div>
+        <div style="margin-left:12px;font-size:28px;color:var(--muted)" id="awayScore">—</div>
+      </div>
+
+      <div style="text-align:center">
+        <div class="match-meta" id="matchTime">—</div>
+        <div style="margin-top:8px" id="stadium">—</div>
+        <div style="margin-top:6px" class="small">Status: <span id="matchStatus">Pre</span></div>
+      </div>
+
+      <div class="team-block" style="justify-content:flex-end">
+        <div style="display:flex;flex-direction:column;align-items:flex-end">
+          <div class="team-name" id="teamHome">Home Team</div>
+          <div class="match-meta" id="homePitch">Probable: —</div>
+        </div>
+        <div style="margin-left:12px;font-size:28px;color:var(--muted)" id="homeScore">—</div>
+      </div>
+    </div>
+
+    <div class="why" id="whyCard">
+      <strong>Why this match matters</strong>
+      <div id="whyText" style="margin-top:8px;color:var(--muted)">Pick reasoning — H2H, pitchers, last 10 games summarized.</div>
+    </div>
+
+    <div class="props-grid" style="margin-top:12px">
+      <div class="prop">
+        <div class="title">Player Prop: Aaron Judge — Over 0.5 HR</div>
+        <div class="meta">Last 10: 4 HR | Hit rate: 70%</div>
+        <div class="ev">EV: +15% • Odds: 2.30</div>
+        <button class="btn" onclick="autoFillProp('Aaron Judge')">Auto-fill bet</button>
+      </div>
+      <div class="prop">
+        <div class="title">Team Prop: Yankees — Over 4.5 Runs</div>
+        <div class="meta">Last 10: avg 5.2 runs | Home: 1.18 x</div>
+        <div class="ev">EV: +12% • Odds: 1.95</div>
+        <button class="btn" onclick="autoFillProp('Yankees Runs')">Auto-fill bet</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:10px;display:flex;gap:8px;align-items:center">
+    <input id="quickTeam" placeholder="Team / Prop" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:#fff">
+    <input id="quickOdds" placeholder="Odds" style="width:90px;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:#fff">
+    <input id="quickStake" placeholder="Stake" style="width:110px;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:#fff">
+    <button class="btn" onclick="addQuickBet()">Add</button>
+  </div>
+</main>
+
+<aside class="side-stack">
+  <div class="panel">
+    <h3>Recommended Teams (≥70%)</h3>
+    <div class="rec-list" id="recs"></div>
+    <div class="small" style="margin-top:8px">Click a recommendation to auto-fill the bet form.</div>
+  </div>
+
+  <div class="panel">
+    <h3>MLB News</h3>
+    <div class="news-list" id="newsFeed"></div>
+  </div>
+
+  <div class="panel">
+    <h3>Parlay / Slip Preview</h3>
+    <div id="slip">
+      <div class="small">No picks yet. Add bets to build parlay.</div>
+    </div>
+  </div>
+</aside>
+
+<footer>
+  © 2025 Diamond Edge — Built for sharp insights. PH timezone (UTC+8)
+</footer>
+</div>
+<script src="app.js"></script>
+</body>
+          </html>
+          
