@@ -25,17 +25,67 @@ section {
   margin: auto;
 }
 
-.dashboard .cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 1rem;
+/* Original: .dashboard .cards - Replaced with new ID and class for clarity */
+#cards-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+    gap: 1.5rem;
+    padding-top: 1rem;
 }
 
 .card {
   background: #fff;
-  border-radius: 8px;
-  padding: 1rem;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  border-radius: 12px; /* Smoother corners */
+  padding: 1.5rem; /* More padding */
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  transition: transform 0.2s;
+  border-top: 5px solid #d32027; /* MLB Red Accent */
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+}
+
+/* New style for the Implied Probability percentage */
+.probability {
+    font-size: 0.9em;
+    font-weight: bold;
+    color: #4CAF50; /* Bold Green */
+    margin-left: 5px;
+}
+
+.card hr {
+    border: none;
+    border-top: 1px solid #eee;
+    margin: 1rem 0;
+}
+
+.card h3 {
+    color: #0a2342;
+    margin-top: 0;
+    font-size: 1.25rem;
+    border-bottom: 2px solid #0a2342;
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+}
+
+#recommendedTeams h2 {
+    color: #d32027; 
+}
+
+#recTeamsList {
+    list-style: none;
+    padding: 0;
+}
+
+#recTeamsList li {
+    background: #e6f7e6;
+    border-left: 4px solid #4CAF50;
+    padding: 0.5rem 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: 4px;
+    font-weight: bold;
 }
 
 footer {
