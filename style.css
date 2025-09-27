@@ -1,68 +1,132 @@
-body {
-  font-family: Arial, sans-serif;
-  background-color: #f4f4f9;
-  margin: 0;
-  padding: 0;
-  color: #333;
+/* New Colors: 
+   Background: #1D2636 (Soft Dark Gray)
+   Card: #2A3A54 (Muted Navy)
+   Text: #E8EBEF (Off-White)
+   Accent: #FF6B6B (Neon Orange/Coral)
+   Positive EV: #50C878 (Lime Green)
+*/
+
+body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    background: #1D2636; 
+    color: #E8EBEF; 
+    margin: 0; 
+    padding: 0;
+}
+header { 
+    padding: 25px; 
+    text-align: center; 
+    background: #111A29; 
+}
+header h1 { 
+    margin:0; 
+    color:#FF6B6B; /* Accent */
+    letter-spacing: 2px;
+}
+.game-card { 
+    background: #2A3A54; /* Card Background */
+    border-radius: 12px; 
+    margin: 20px auto; 
+    padding: 20px; 
+    width: 90%; 
+    max-width: 950px; 
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3); 
+    border-left: 4px solid #FF6B6B;
+}
+.game-card h2 { 
+    margin: 0 0 15px 0; 
+    color: #E8EBEF;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
+}
+.stats, .props { 
+    display: flex; 
+    flex-wrap: wrap; 
+    gap: 15px; 
+    margin-top: 15px; 
+}
+.stat-item { 
+    flex: 1; 
+    min-width: 150px;
+    background: #1D2636; 
+    padding: 12px; 
+    border-radius: 8px; 
+    text-align: center; 
+    font-size: 0.9em; 
+    border: 1px solid #3A4A64;
+}
+.prob { 
+    color: #FF6B6B; /* Accent for implied probability */
+    font-weight: bold; 
+    margin-left: 5px; 
+} 
+.highlight { 
+    color:#FFB84C; /* Secondary highlight color */
+    font-weight:bold; 
 }
 
-header {
-  text-align: center;
-  background-color: #0b2e59;
-  color: #fff;
-  padding: 20px 0;
+/* EV Coloring */
+.ev-positive { 
+    color: #50C878; /* Lime Green */
+    font-weight: bold; 
+}
+.ev-negative { 
+    color: #F44336; /* Red */
+    font-weight: bold; 
 }
 
-.mlb-logo {
-  height: 50px;
-  margin-bottom: 10px;
+#apiUsage { 
+    padding: 12px; 
+    background: #1D2636; 
+    text-align: center;
+    border-bottom: 1px solid #3A4A64;
 }
-
-h1 {
-  margin: 5px 0;
+#calculator { 
+    background: #2A3A54; 
+    margin: 30px auto; 
+    padding: 25px; 
+    border-radius: 12px; 
+    max-width: 500px; 
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
-
-#instructions, #api-usage {
-  margin: 20px auto;
-  max-width: 900px;
-  background: #fff;
-  padding: 15px;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+#calculator h2 {
+    color: #FFB84C;
+    margin-top: 0;
 }
-
-#games-container {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin: 20px auto;
-  max-width: 1200px;
+#calculator input, #calculator select, #calculator button { 
+    margin: 8px 0; 
+    padding: 12px; 
+    width: 100%; 
+    border-radius: 6px; 
+    border: none; 
+    box-sizing: border-box; /* Include padding in width calculation */
 }
-
-.game-card {
-  background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 0 8px rgba(0,0,0,0.15);
-  margin: 10px;
-  padding: 15px;
-  width: 250px;
-  transition: transform 0.2s;
+#calculator input, #calculator select {
+    background: #1D2636;
+    color: #E8EBEF;
+    border: 1px solid #3A4A64;
 }
-
-.game-card:hover {
-  transform: scale(1.05);
+#calculator button { 
+    background: #FF6B6B; 
+    color: #111A29; 
+    font-weight: bold; 
+    cursor: pointer; 
+    transition: background-color 0.2s;
 }
-
-.game-card h3 {
-  margin: 10px 0;
-  font-size: 1.1rem;
+#calculator button:hover {
+    background: #FF8F8F;
 }
-
-.game-card p {
-  margin: 5px 0;
+#calcResult { 
+    margin-top: 15px; 
+    background: #1D2636; 
+    padding: 15px; 
+    border-radius: 8px; 
+    text-align: center; 
 }
-
-.recommended {
-  font-weight: bold;
-  color: green;
+footer {
+    padding: 15px; 
+    text-align: center; 
+    background: #111A29; 
+    margin-top: 30px;
+    color: #7A8699;
 }
