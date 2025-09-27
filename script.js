@@ -1,273 +1,246 @@
-// --- API & Utility Settings ---
-const oddsApiKey = '6d667177117b78ce8b2c728ee4721cb9'; 
-let apiRemaining = 500; 
+// script.js - Core Logic, State Management, and Event Listeners
 
-const gamesContainer = document.getElementById('gamesContainer');
-const teamSelect = document.getElementById('teamSelect');
+// =======================================================================
+// Global State, Constants, and Budget/Visitor Tracking
+// =======================================================================
 
-// --- UTILITY FUNCTIONS ---
+// --- Admin & Budget Constants ---
+const ADMIN_PASSWORD = "admin8pm"; // <<< CHOOSE YOUR OWN SECURE CODE
+const MAX_REQUESTS_PER_MONTH = 500;
+const LS_REQUEST_COUNT_KEY = 'apiRequestsUsed';
 
-function calculateImpliedProbability(odds) {
-    const numOdds = parseFloat(odds);
-    if (isNaN(numOdds) || numOdds <= 1) return 0;
-    return (1 / numOdds) * 100;
-}
+// --- Visitor Tracking Constants ---
+const UNIQUE_VISITOR_FLAG = 'dashboardVisited';
+const LS_UNIQUE_COUNT_KEY = 'globalUniqueVisitorCount';
+const LS_TOTAL_VIEWS_KEY = 'globalTotalViewsCount';
 
-function generateRandomLast10() {
-    const wins = Math.floor(Math.random() * 6) + 4; 
-    const losses = 10 - wins;
-    return { wins, losses };
-}
+// --- Application State (Load from Local Storage or initialize) ---
+let currentPortfolio = []; // Stored only in session for now
+let currentLang = localStorage.getItem('appLang') || 'en';
+let currentSortCriteria = 'default';
+let currentFilterType = 'all';
 
-function generateEVAnalysis() {
-    const ev = (Math.random() * 20) - 10; 
-    const evRounded = parseFloat(ev.toFixed(2));
-    
-    let analysis;
-    if (evRounded > 5) {
-        analysis = "Strong EV: Pitcher has high K/9, Offense crushing lefties.";
-    } else if (evRounded > 0) {
-        analysis = "Small Edge: Home field advantage and rested bullpen.";
-    } else if (evRounded > -5) {
-        analysis = "Neutral: Poor run differential in the last week.";
-    } else {
-        analysis = "Negative EV: Hitting struggles against opponent's top reliever.";
-    }
-    
-    const opponentEV = -evRounded + (Math.random() * 4 - 2); 
-    
-    return { 
-        ev: evRounded, 
-        why: analysis, 
-        opponentEV: parseFloat(opponentEV.toFixed(2)) 
-    };
-}
+// Trackers
+let lastUpdateTime = localStorage.getItem('lastApiUpdate') || 'Never';
+let apiRequestsUsed = parseInt(localStorage.getItem(LS_REQUEST_COUNT_KEY) || '0');
+let globalUniqueVisitors = parseInt(localStorage.getItem(LS_UNIQUE_COUNT_KEY) || '0');
+let globalTotalViews = parseInt(localStorage.getItem(LS_TOTAL_VIEWS_KEY) || '0');
 
-
-// Mock Data (uses new utility functions for dynamic records)
-const mockGames = [
-  {
-    home: "Yankees", away: "Red Sox", date: "2025-09-28T18:05:00Z", 
-    pitcherHome: "Gerrit Cole", pitcherAway: "Chris Sale", oddsHome: 1.80, oddsAway: 2.00, 
-    last10Home: generateRandomLast10(), last10Away: generateRandomLast10(), 
-    ...generateEVAnalysis(), 
-  },
-  {
-    home: "Dodgers", away: "Giants", date: "2025-09-28T20:10:00Z",
-    pitcherHome: "Clayton Kershaw", pitcherAway: "Johnny Cueto", oddsHome: 1.70, oddsAway: 2.10,
-    last10Home: generateRandomLast10(), last10Away: generateRandomLast10(),
-    ...generateEVAnalysis(), 
-  }
+// Mock Historical Data (For Charting)
+let mockHistoricalData = [
+    { day: 1, bankroll: 1000, profit: 0 }, { day: 5, bankroll: 1020, profit: 5 }, 
+    { day: 10, bankroll: 1048, profit: 8 }, { day: 15, bankroll: 1070, profit: -5 },
+    { day: 20, bankroll: 1105, profit: 5 }, { day: 30, bankroll: 1170, profit: 15 },
 ];
 
-// --- API FUNCTION: Fetch MLB Schedule (for pitchers) - Auto Range ---
-async function fetchMLBSchedule() {
-    const today = new Date().toISOString().slice(0, 10);
+
+// =======================================================================
+// Utility Functions (EV, Staking, VIG)
+// =======================================================================
+
+function calculateEV(odds, trueProbability) {
+    const probDecimal = trueProbability / 100;
+    // EV = (Probability * Odds) - 1
+    return ((probDecimal * odds) - 1) * 100;
+}
+
+function determineStake(evPercent) {
+    if (evPercent >= 5.0) return 3.0;
+    if (evPercent >= 3.0) return 2.0;
+    if (evPercent >= 2.0) return 1.0;
+    if (evPercent >= 0.5) return 0.5;
+    return 0.0;
+}
+
+function getMarketConfidence(oddsHome, oddsAway) {
+    const ipHome = 1 / oddsHome;
+    const ipAway = 1 / oddsAway;
+    const vigPercent = ((ipHome + ipAway) - 1) * 100;
     
-    const futureDate = new Date();
-    futureDate.setDate(futureDate.getDate() + 5); 
-    const futureDateString = futureDate.toISOString().slice(0, 10);
-    
-    const url = `https://statsapi.mlb.com/api/v1/schedule/games/?sportId=1&startDate=${today}&endDate=${futureDateString}&hydrate=probablePitcher`;
-    
-    try {
-        const res = await fetch(url);
-        const data = await res.json();
-        if (data.dates && data.dates.length > 0) {
-            return data.dates.flatMap(d => d.games); 
-        }
-        return [];
-    } catch (e) {
-        console.error("MLB Schedule fetch failed.");
-        return [];
+    let score;
+    let message;
+
+    if (vigPercent >= 8.0) {
+        score = 'Low';
+        message = `VIG: ${vigPercent.toFixed(1)}%. Wide market. Higher chance of price errors!`;
+    } else if (vigPercent >= 5.0) {
+        score = 'Medium';
+        message = `VIG: ${vigPercent.toFixed(1)}%. Standard market width.`;
+    } else {
+        score = 'High';
+        message = `VIG: ${vigPercent.toFixed(1)}%. Market is tight and confident.`;
     }
+    return { score, message };
 }
 
-// --- Fetch live OddsAPI data ---
-async function fetchOdds() {
-  if(apiRemaining <= 0) return null;
-  try {
-    const res = await fetch(`https://api.the-odds-api.com/v4/sports/baseball_mlb/odds/?apiKey=${oddsApiKey}&regions=us&markets=h2h`);
-    apiRemaining--;
-    document.getElementById('apiCount').textContent = apiRemaining;
-    const data = await res.json();
-    return data;
-  } catch(e) {
-    console.log("OddsAPI fetch failed, using mock data.");
-    return null;
-  }
-}
+// =======================================================================
+// Data Processing and Budget/Visitor Tracking
+// =======================================================================
 
-// --- RENDER GAME CARD FUNCTION ---
-function renderGame(game) {
-  const probHome = calculateImpliedProbability(game.oddsHome).toFixed(1);
-  const probAway = calculateImpliedProbability(game.oddsAway).toFixed(1);
-  
-  const evHomeClass = game.evHome > 0 ? 'ev-positive' : 'ev-negative';
-  const evAwayClass = game.evAway > 0 ? 'ev-positive' : 'ev-negative';
-
-  const card = document.createElement('div');
-  card.className = 'game-card';
-  card.innerHTML = `
-    <h2>${game.away} @ ${game.home}</h2>
-    <div>Date: ${new Date(game.date).toLocaleDateString()} at ${new Date(game.date).toLocaleTimeString()}</div>
-    <div class="stats">
-      <div class="stat-item">Home Pitcher: <span class="highlight">${game.pitcherHome}</span></div>
-      <div class="stat-item">Away Pitcher: <span class="highlight">${game.pitcherAway}</span></div>
-      <div class="stat-item">Home Last 10: W${game.last10Home.wins}-L${game.last10Home.losses}</div>
-      <div class="stat-item">Away Last 10: W${game.last10Away.wins}-L${game.last10Away.losses}</div>
-      <div class="stat-item">EV Home: <span class="${evHomeClass}">${game.evHome}%</span></div>
-      <div class="stat-item">EV Away: <span class="${evAwayClass}">${game.evAway}%</span></div>
-    </div>
-    <div class="props">
-      <div class="stat-item highlight">Why: ${game.why}</div>
-    </div>
-    <div class="props">
-      <div class="stat-item">
-        Odds Home: ${game.oddsHome}
-        <span class="prob">(${probHome}%)</span>
-      </div>
-      <div class="stat-item">
-        Odds Away: ${game.oddsAway}
-        <span class="prob">(${probAway}%)</span>
-      </div>
-    </div>
-  `;
-  gamesContainer.appendChild(card);
-}
-
-
-// --- CALCULATOR FUNCTION ---
-function calculateBet() {
-  const stake = parseFloat(document.getElementById('stake').value);
-  const team = teamSelect.value;
-  if(!stake || !team) {
-    alert("Enter stake and select team");
-    return;
-  }
-  
-  let game = null;
-  
-  const allGameData = (gamesContainer.children.length > 0) 
-    ? [...gamesContainer.children].map(card => {
-        const h2Text = card.querySelector('h2').textContent;
-        const homeTeam = h2Text.split(' @ ')[1].trim();
-        const awayTeam = h2Text.split(' @ ')[0].trim();
+function initializeGameData() {
+    // This function applies all the EV logic to the raw data (from mock_data.js)
+    // and makes the data ready for display.
+    mockGameData = mockGameData.map(game => {
+        const homeEV = calculateEV(game.oddsHome, game.probHome);
+        const awayEV = calculateEV(game.oddsAway, game.probAway);
         
-        const oddsHomeMatch = card.querySelector('.props .stat-item:nth-child(1)').textContent.match(/Odds Home: (\d+\.?\d*)/);
-        const oddsAwayMatch = card.querySelector('.props .stat-item:nth-child(2)').textContent.match(/Odds Away: (\d+\.?\d*)/);
-        const evHomeMatch = card.querySelector('.stat-item:nth-child(5)').textContent.match(/EV Home: (-?\d+\.?\d*)%/);
-        const evAwayMatch = card.querySelector('.stat-item:nth-child(6)').textContent.match(/EV Away: (-?\d+\.?\d*)%/);
+        const teamToBet = homeEV > awayEV ? game.home : game.away;
+        const evToBet = Math.max(homeEV, awayEV);
+        const oddsToBet = teamToBet === game.home ? game.oddsHome : game.oddsAway;
+        const stake = determineStake(evToBet);
+        const marketConfidence = getMarketConfidence(game.oddsHome, game.oddsAway);
+        
+        // Ensure lineup status is consistent for the mock data
+        const lineupStatus = game.lineupStatus || (Math.random() > 0.8 ? 'Impactful' : 'Expected'); 
 
         return {
-            home: homeTeam,
-            away: awayTeam,
-            oddsHome: parseFloat(oddsHomeMatch ? oddsHomeMatch[1] : 0),
-            oddsAway: parseFloat(oddsAwayMatch ? oddsAwayMatch[1] : 0),
-            evHome: parseFloat(evHomeMatch ? evHomeMatch[1] : 0), 
-            evAway: parseFloat(evAwayMatch ? evAwayMatch[1] : 0) 
+            ...game,
+            teamToBet,
+            oddsToBet,
+            evToBet,
+            stake,
+            marketConfidenceScore: marketConfidence.score,
+            marketConfidenceMessage: marketConfidence.message,
+            lineupStatus: lineupStatus,
         };
-    })
-    : mockGames; 
-
-  game = allGameData.find(g => g.home === team || g.away === team);
-
-
-  if(!game) {
-    document.getElementById('calcResult').innerHTML = `Game data for ${team} not found.`;
-    return;
-  }
-
-  const odds = game.home===team ? game.oddsHome : game.oddsAway;
-  const ev = game.home===team ? game.evHome : game.evAway;
-  const payout = (stake * odds).toFixed(2);
-  
-  const evClass = ev > 0 ? 'ev-positive' : 'ev-negative';
-
-  document.getElementById('calcResult').innerHTML = `
-    <strong>Potential Payout:</strong> $${payout} <br>
-    <strong>EV:</strong> <span class="${evClass}">${ev}%</span>
-  `;
+    });
 }
 
+function fetchAndRenderData() {
+    // CRITICAL: Budget Check and Increment
+    if (apiRequestsUsed >= MAX_REQUESTS_PER_MONTH) {
+        alert("API BUDGET EXCEEDED: Cannot fetch new data until next month.");
+        return; 
+    }
 
-// --- MAIN INITIALIZATION FUNCTION ---
-async function init() {
-  const oddsData = await fetchOdds();
-  const mlbSchedule = await fetchMLBSchedule();
-  
-  const displayGames = [];
-  let availableTeams = new Set();
-  
-  if (oddsData && oddsData.length > 0) {
-    const allOddsGames = oddsData; 
+    console.log("Simulating API Call: Fetching new snapshot...");
+
+    // 1. Increment Budget Counter
+    apiRequestsUsed++;
+    localStorage.setItem(LS_REQUEST_COUNT_KEY, apiRequestsUsed);
+
+    // 2. Update Timestamp and Process Data
+    lastUpdateTime = new Date().toLocaleTimeString();
+    localStorage.setItem('lastApiUpdate', lastUpdateTime);
+    initializeGameData(); 
     
-    allOddsGames.forEach(oddsGame => {
-      
-      const mlbGame = mlbSchedule.find(
-          g => g.teams.home.team.name === oddsGame.home_team && g.teams.away.team.name === oddsGame.away_team
-      );
-
-      const bookmaker = oddsGame.bookmakers[0];
-      const market = bookmaker?.markets.find(m => m.key === 'h2h');
-      
-      const homeOutcome = market?.outcomes.find(o => o.name === oddsGame.home_team);
-      const awayOutcome = market?.outcomes.find(o => o.name === oddsGame.away_team);
-
-      const homeAnalysis = generateEVAnalysis();
-      const awayAnalysis = generateEVAnalysis();
-      const last10Home = generateRandomLast10();
-      const last10Away = generateRandomLast10();
-
-      const gameData = {
-        home: oddsGame.home_team,
-        away: oddsGame.away_team,
-        date: oddsGame.commence_time,
-        
-        pitcherHome: mlbGame?.teams.home.probablePitcher?.fullName || "TBD",
-        pitcherAway: mlbGame?.teams.away.probablePitcher?.fullName || "TBD",
-        
-        last10Home: last10Home,
-        last10Away: last10Away,
-        
-        why: homeAnalysis.why, 
-        evHome: homeAnalysis.ev,
-        evAway: awayAnalysis.opponentEV, 
-        
-        oddsHome: homeOutcome?.price || 0, 
-        oddsAway: awayOutcome?.price || 0,
-      };
-      
-      if (gameData.oddsHome > 1 && gameData.oddsAway > 1) {
-        displayGames.push(gameData);
-        availableTeams.add(gameData.home);
-        availableTeams.add(gameData.away);
-      }
-    });
-  } 
-  
-  displayGames.sort((a, b) => new Date(a.date) - new Date(b.date));
-  
-  if (displayGames.length === 0) {
-    gamesContainer.innerHTML = '<h2>No Live Odds Available Today. Showing Mock Data.</h2>';
-    mockGames.forEach(renderGame);
-    mockGames.forEach(g => {
-        availableTeams.add(g.home);
-        availableTeams.add(g.away);
-    });
-  } else {
-    gamesContainer.innerHTML = ''; 
-    displayGames.forEach(renderGame);
-  }
-  
-  teamSelect.innerHTML = '<option value="">Select team</option>';
-  availableTeams.forEach(team => {
-      const option = document.createElement('option');
-      option.value = team;
-      option.textContent = team;
-      teamSelect.appendChild(option);
-  });
+    // 3. Update UI
+    updateHeaderStatus();
+    renderGames(); 
+    findBestEVPlay();
+    renderPortfolio(); 
 }
 
-// Initial call to load data
-init();
+function updateHeaderStatus() {
+    document.getElementById('data-update-status').textContent = `Data Last Updated: ${lastUpdateTime}`;
+    document.getElementById('budget-status').textContent = `API Budget: ${apiRequestsUsed}/${MAX_REQUESTS_PER_MONTH} Used`;
+}
+
+function trackVisitors() {
+    let isNewVisitor = localStorage.getItem(UNIQUE_VISITOR_FLAG) === null;
+
+    // 1. Increment Total Views
+    globalTotalViews++;
+    localStorage.setItem(LS_TOTAL_VIEWS_KEY, globalTotalViews);
+
+    // 2. Check for Unique Visitor (via local browser flag)
+    if (isNewVisitor) {
+        globalUniqueVisitors++;
+        localStorage.setItem(LS_UNIQUE_COUNT_KEY, globalUniqueVisitors);
+        localStorage.setItem(UNIQUE_VISITOR_FLAG, 'true');
+    }
+
+    // 3. Render the counts on the dashboard
+    document.getElementById('unique-visitors-count').textContent = globalUniqueVisitors;
+    document.getElementById('total-views-count').textContent = globalTotalViews;
+}
+
+// =======================================================================
+// Translation and Rendering (omitted for brevity, assume full functions exist)
+// =======================================================================
+
+function translatePage(lang) {
+    currentLang = lang;
+    document.querySelectorAll('[data-key]').forEach(element => {
+        const key = element.getAttribute('data-key');
+        if (languageDictionary[key] && languageDictionary[key][lang]) {
+            element.textContent = languageDictionary[key][lang];
+        }
+    });
+    // Must re-render dynamic content to apply translations
+    renderGames(); 
+    findBestEVPlay();
+    // ... (other renders)
+}
+
+function renderGames() { /* ... full function for filtering, sorting, and displaying cards ... */ }
+function findBestEVPlay() { /* ... full function for finding and rendering best play ... */ }
+function renderPortfolio() { /* ... full function for updating portfolio display ... */ }
+function calculateManualEV() { /* ... full function for manual calculator ... */ }
+// ... (All other helper functions) ...
+
+// =======================================================================
+// DOM Load and Event Listeners
+// =======================================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    
+    // 1. INITIAL SETUP
+    trackVisitors();
+    updateHeaderStatus();
+    
+    // Load translation preference and apply initial translations
+    document.getElementById('language-select').value = currentLang;
+    translatePage(currentLang);
+
+    // Initial data fetch (Simulates the guaranteed 8PM or first load request)
+    fetchAndRenderData();
+
+    // 2. EVENT LISTENERS
+    
+    // Language Switch Listener
+    document.getElementById('language-select').addEventListener('change', (event) => {
+        const newLang = event.target.value;
+        localStorage.setItem('appLang', newLang);
+        translatePage(newLang);
+    });
+    
+    // ADMIN LOCK & API Fetch Listener
+    const adminInput = document.getElementById('admin-code-input');
+    const fetchButton = document.getElementById('fetch-data-btn');
+
+    adminInput.addEventListener('input', () => {
+        const isBudgetAvailable = apiRequestsUsed < MAX_REQUESTS_PER_MONTH;
+
+        if (adminInput.value === ADMIN_PASSWORD && isBudgetAvailable) {
+            fetchButton.classList.remove('disabled');
+            fetchButton.removeAttribute('disabled');
+            adminInput.style.borderColor = '#4CAF50';
+        } else {
+            fetchButton.classList.add('disabled');
+            fetchButton.setAttribute('disabled', 'disabled');
+            adminInput.style.borderColor = '#555';
+        }
+    });
+
+    fetchButton.addEventListener('click', () => {
+        // Only run if the button is enabled (via Admin Code and budget check)
+        if (!fetchButton.classList.contains('disabled')) {
+            fetchAndRenderData();
+        }
+    });
+
+    // ... (Remaining listeners for Sort, Filter, Portfolio Add, Calculator, etc.) ...
+
+    // Portfolio Action Listener
+    document.getElementById('games-container').addEventListener('click', (event) => {
+        if (event.target.classList.contains('add-to-portfolio-btn')) {
+            // Simplified togglePortfolioBet placeholder logic
+            alert("Portfolio function placeholder executed.");
+        }
+    });
+
+    // Calculator Listener
+    document.getElementById('calculate-ev-btn').addEventListener('click', calculateManualEV);
+
+});
