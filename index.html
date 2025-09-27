@@ -3,59 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Diamond Edge & Bases Loaded</title>
+  <title>Bases Loaded</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
-    <img src="https://upload.wikimedia.org/wikipedia/en/0/0b/MLB_logo.svg" alt="MLB Logo" class="logo">
-    <h1>Diamond Edge & Bases Loaded</h1>
+    <img src="https://upload.wikimedia.org/wikipedia/en/7/7e/MLB_logo.svg" alt="MLB Logo" class="mlb-logo">
+    <h1>Bases Loaded</h1>
+    <p>MLB Dashboard & Odds</p>
   </header>
 
-  <section id="teamSelection">
-    <label for="teamInput">Select Team:</label>
-    <select id="teamInput">
-      <option value="">--Choose Team--</option>
-      <option value="Yankees">Yankees</option>
-      <option value="Red Sox">Red Sox</option>
-      <option value="Dodgers">Dodgers</option>
-      <option value="Giants">Giants</option>
-      </select>
+  <section id="instructions">
+    <h2>How it works</h2>
+    <p>This dashboard uses OddsAPI and Balldontlie APIs to show recommended teams, player stats, and game predictions.</p>
   </section>
 
-  <section id="gamesSection">
-    <h2>Today's Games & Odds</h2>
-    <div id="cards-container" class="cards-grid">
-      </div>
+  <section id="api-usage">
+    <h2>API Usage</h2>
+    <p>OddsAPI used: <span id="oddsapi-count">0</span>/500</p>
+    <p>Balldontlie API used: <span id="balldontlie-count">0</span></p>
   </section>
 
-  <section id="gamePanel" style="display:none;">
-    <h2 id="matchTitle"></h2>
-    <img id="gameLogo" src="" alt="Game Logo" class="game-logo">
-    <p id="stadiumText"></p>
-    <p id="homePitcher"></p>
-    <p id="awayPitcher"></p>
-    <h3>Lineups:</h3>
-    <ul id="lineupsList"></ul>
-    <h3>Injuries:</h3>
-    <ul id="injuriesList"></ul>
-  </section>
-
-  <section id="newsSection">
-    <h2>MLB News</h2>
-    <ul id="newsList"></ul>
-  </section>
-
-  <section id="recommendedTeams">
-    <h2>Recommended Teams (70%+ Win Rate)</h2>
-    <ul id="recTeamsList">
-      <li>Yankees</li>
-      <li>Dodgers</li>
-    </ul>
+  <section id="games-container">
+    <!-- Game cards will be dynamically inserted here -->
   </section>
 
   <footer>
-    <p>&copy; 2025 Diamond Edge & Bases Loaded | Powered by Mock Data + Free APIs</p>
+    <p>&copy; 2025 Bases Loaded | Data via OddsAPI & Balldontlie</p>
   </footer>
 
   <script src="app.js"></script>
