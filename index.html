@@ -3,32 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bases Loaded - MLB Dashboard</title>
+    <title>EV Strategy Dashboard</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
+
     <header>
-        <h1>Bases Loaded - MLB Dashboard</h1>
+        <h1 id="app-title" data-key="appTitle">EV Strategy Dashboard</h1>
+        
+        <div id="status-bar-container">
+            <div id="visitor-stats-bar">
+                <p>
+                    <span data-key="uniqueVisitorsLabel">Unique Visitors:</span> 
+                    <strong id="unique-visitors-count">0</strong> 
+                </p>
+                <p>
+                    <span data-key="totalViewsLabel">Total Views:</span> 
+                    <strong id="total-views-count">0</strong>
+                </p>
+            </div>
+            <p id="data-update-status">Data Last Updated: Never</p>
+            <p id="budget-status">API Budget: 0/500 Used</p>
+        </div>
+
+        <div class="header-controls">
+            <div class="language-selector">
+                <label for="language-select" data-key="languageLabel">Wika/Language:</label>
+                <select id="language-select">
+                    <option value="en">English (EN)</option>
+                    <option value="tl">Tagalog (TL)</option>
+                </select>
+            </div>
+            
+            <div class="api-control-group">
+                <input type="password" id="admin-code-input" placeholder="Admin Code" title="Enter code to enable refresh">
+                <button id="fetch-data-btn" class="refresh-button disabled" data-key="fetchDataButton" disabled>
+                    FETCH SNAPSHOT (1 Request)
+                </button>
+            </div>
+        </div>
     </header>
 
-    <div id="apiUsage">OddsAPI Requests Left: <span id="apiCount">500</span></div>
+    <section id="best-play-panel">
+        <h2 data-key="bestPlayTitle">⭐ Best Value Play of the Day</h2>
+        <div id="best-play-card">
+            <p data-key="noBestPlay">Analyzing market for elite value...</p>
+        </div>
+    </section>
 
-    <div id="gamesContainer"></div>
+    <section id="main-dashboard">
+        <h2 data-key="mainDashboardTitle">Today's Value Bets</h2>
 
-    <div id="calculator">
-        <h2>Bet & EV Calculator</h2>
-        <input type="number" id="stake" placeholder="Enter stake amount" min="1">
-        <select id="teamSelect">
-            <option value="">Select team</option>
-        </select>
-        <button onclick="calculateBet()">Calculate</button>
-        <div id="calcResult"></div>
-    </div>
+        <div class="controls-bar">
+            <div class="filter-group">
+                <label for="sort-select" data-key="sortLabel">Sort By:</label>
+                <select id="sort-select">
+                    <option value="default" data-key="sortDefault">Default (Time)</option>
+                    <option value="ev-desc" data-key="sortEV">EV (High to Low)</option>
+                    <option value="stake-desc" data-key="sortStake">Stake (High to Low)</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label data-key="filterLabel">Filter:</label>
+                <button id="filter-low-vig-btn" class="filter-btn" data-key="filterLowVig">Sharp Markets (Low VIG)</button>
+                <button id="filter-high-vig-btn" class="filter-btn" data-key="filterHighVig">Soft Markets (High VIG)</button>
+                <button id="filter-lineup-btn" class="filter-btn" data-key="filterLineup">Lineup Alerts</button>
+                <button id="filter-reset-btn" class="filter-btn active" data-key="filterReset">Show All</button>
+            </div>
+        </div>
 
-    <footer>
-        <small>&copy; 2025 Bases Loaded. All rights reserved.</small>
-    </footer>
+        <div id="games-container" class="game-grid">
+            </div>
+    </section>
 
+    <section id="manual-ev-section">
+        <h2 data-key="manualEVTitle">Manual EV Calculator</h2>
+        <div class="ev-calculator-inputs">
+            <div>
+                <label for="odds-input" data-key="inputOddsLabel">Book Odds (Decimal):</label>
+                <input type="number" id="odds-input" step="0.01" value="2.00">
+            </div>
+            <div>
+                <label for="prob-input" data-key="inputProbLabel">Your Model Probability (%):</label>
+                <input type="number" id="prob-input" step="0.1" value="50.0">
+            </div>
+            <button id="calculate-ev-btn" data-key="calculateButton">Calculate EV</button>
+        </div>
+        <div id="ev-calculator-output">
+            <p data-key="actionVerdictTitle" class="action-verdict-title">Action Verdict:</p>
+            <p class="action-verdict-result">
+                <span id="manual-action-verdict" class="verdict-neutral" data-key="verdictInput">Input Required</span>
+            </p>
+            <p>Calculated Expected Value (EV): <span id="manual-ev-result" class="ev-negative">0.00%</span></p>
+        </div>
+    </section>
+
+    <section id="portfolio-section">
+        <h2 data-key="portfolioTitle">EV Portfolio Simulation (Today)</h2>
+        <ul id="portfolio-list">
+            <li class="portfolio-empty" data-key="portfolioEmpty">Add +EV bets to your portfolio below.</li>
+        </ul>
+    </section>
+
+    <section id="daily-results-tracker">
+        <h2 data-key="dailyResultsTitle">🎯 Day-End Mock Results</h2>
+        <div class="tracker-action">
+            <button id="simulate-daily-results-btn" data-key="simulateButton">🎲 SIMULATE TODAY'S OUTCOMES</button>
+            <button id="reset-daily-tracker-btn" class="reset-button" data-key="resetButton">🔄 RESET ALL MOCK DATA</button>
+        </div>
+    </section>
+
+    <section id="bankroll-chart-section">
+        <h2 data-key="chartTitle">📈 Simulated Bankroll Growth (Long-Term View)</h2>
+        <div class="chart-container">
+            <canvas id="bankrollGrowthChart"></canvas>
+        </div>
+    </section>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script> 
+    
+    <script src="translations.js"></script> 
+    <script src="mock_data.js"></script> 
     <script src="script.js"></script>
 </body>
 </html>
