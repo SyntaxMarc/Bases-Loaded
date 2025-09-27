@@ -1,74 +1,85 @@
-// --- Mock Games Data ---
-const mockGames=[
+// Mock Data
+const mockGames = [
   {
-    home:"Yankees",
-    away:"Red Sox",
-    time:"2025-09-28T08:00:00Z",
-    stadium:"Yankee Stadium",
-    homePitcher:"Gerrit Cole",
-    awayPitcher:"Chris Sale"
+    home: "Yankees",
+    away: "Red Sox",
+    h2h: "50%",
+    pitcher: "Strong",
+    last10: "7-3",
+    recommendation: "Home",
   },
   {
-    home:"Dodgers",
-    away:"Giants",
-    time:"2025-09-28T10:00:00Z",
-    stadium:"Dodger Stadium",
-    homePitcher:"Walker Buehler",
-    awayPitcher:"Logan Webb"
+    home: "Dodgers",
+    away: "Giants",
+    h2h: "45%",
+    pitcher: "Average",
+    last10: "5-5",
+    recommendation: "Away",
   }
 ];
 
-const teamInput=document.getElementById("teamInput");
+// API Keys
+const oddsApiKey = "6d667177117b78ce8b2c728ee4721cb9";
+const balldontlieApi = "03b94385-b4ec-4575-9bb8-1f5954410c64";
 
-// --- Convert UTC/ISO to PH Time ---
-function toPHTime(isoString){
-  const date=new Date(isoString);
-  const phOffset=8*60;
-  const localDate=new Date(date.getTime() + phOffset*60000);
-  return localDate.toLocaleString("en-PH",{weekday:"short",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});
+let oddsApiCount = 0;
+
+// Fetch OddsAPI (example)
+async function fetchOddsAPI() {
+  if (oddsApiCount >= 500) return;
+  oddsApiCount++;
+  document.getElementById("oddsapi-count").innerText = oddsApiCount;
+
+  // Example request
+  try {
+    const res = await fetch(`https://api.the-odds-api.com/v4/sports/baseball_mlb/odds/?apiKey=${oddsApiKey}&regions=us&markets=h2h`);
+    const data = await res.json();
+    return data;
+  } catch (err) {
+    console.log("OddsAPI fetch error, using mock data.");
+    return mockGames;
+  }
 }
 
-// --- Populate Game Panel ---
-teamInput.addEventListener("change",()=>{
-  const team=teamInput.value;
-  const game=mockGames.find(g=>g.home===team||g.away===team);
-  if(!game){document.getElementById("gamePanel").style.display="none";return;}
-  document.getElementById("gamePanel").style.display="block";
-  document.getElementById("matchTitle").textContent=`${game.away} @ ${game.home} • ${toPHTime(game.time)}`;
-  document.getElementById("gameLogo").src="https://upload.wikimedia.org/wikipedia/en/0/0b/MLB_logo.svg";
-  document.getElementById("stadiumText").textContent=game.stadium;
-  document.getElementById("homePitcher").textContent=`Home: ${game.homePitcher}`;
-  document.getElementById("awayPitcher").textContent=`Away: ${game.awayPitcher}`;
-  document.getElementById("lineupsList").innerHTML="<li>Lineup 1, Lineup 2...</li>";
-  document.getElementById("injuriesList").innerHTML="<li>Player A injured, Player B day-to-day</li>";
-});
+// Fetch Ball Don't Lie API
+async function fetchBalldontlie() {
+  try {
+    const res = await fetch(`https://www.balldontlie.io/api/v1/games`);
+    const data = await res.json();
+    return data.data;
+  } catch (err) {
+    console.log("Balldontlie fetch error, using mock data.");
+    return mockGames;
+  }
+}
 
-// --- Mock News Feed ---
-const newsList=document.getElementById("newsList");
-const mockNews=[
-  "MLB: Yankees vs Red Sox - Key match tonight!",
-  "Dodgers' Walker Buehler ready for showdown vs Giants",
-  "Cubs announce final lineup vs White Sox",
-  "Mets activate star player from IL",
-  "Phillies' bullpen strategy ahead of Cardinals game"
-];
-function loadNews(){
-  newsList.innerHTML="";
-  mockNews.forEach(n=>{
-    const li=document.createElement("li");
-    li.textContent=n;
-    newsList.appendChild(li);
+// Render Cards
+function renderCards(games) {
+  const container = document.getElementById("cards-container");
+  container.innerHTML = "";
+  games.forEach(game => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <h3>${game.home} vs ${game.away}</h3>
+      <p>H2H: ${game.h2h}</p>
+      <p>Pitcher: ${game.pitcher}</p>
+      <p>Last 10: ${game.last10}</p>
+      <p>Recommendation: <strong>${game.recommendation}</strong></p>
+    `;
+    container.appendChild(card);
   });
 }
-loadNews();
-setInterval(loadNews,300000);
 
-// --- Recommended Teams (Mock Logic) ---
-const recTeamsList=document.getElementById("recTeamsList");
-const recommended=["Yankees","Dodgers"];
-recTeamsList.innerHTML="";
-recommended.forEach(t=>{
-  const li=document.createElement("li");
-  li.textContent=t;
-  recTeamsList.appendChild(li);
-});
+// Main
+async function main() {
+  const oddsData = await fetchOddsAPI();
+  const balldontlieData = await fetchBalldontlie();
+
+  // Merge or prioritize API data, fallback to mock
+  const displayData = oddsData.length ? oddsData.slice(0, 5) : mockGames;
+
+  renderCards(displayData);
+}
+
+main();
