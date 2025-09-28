@@ -3,128 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EV Strategy Dashboard</title>
+    <title>Bases Loaded EV Strategy Dashboard</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
 
     <header>
-        <h1 id="app-title" data-key="appTitle">EV Strategy Dashboard</h1>
-        
-        <div id="status-bar-container">
-            <div id="visitor-stats-bar">
-                <p>
-                    <span data-key="uniqueVisitorsLabel">Unique Visitors:</span> 
-                    <strong id="unique-visitors-count">0</strong> 
-                </p>
-                <p>
-                    <span data-key="totalViewsLabel">Total Views:</span> 
-                    <strong id="total-views-count">0</strong>
-                </p>
-            </div>
-            <p id="data-update-status">Data Last Updated: Never</p>
-            <p id="budget-status">API Budget: 0/500 Used</p>
-        </div>
-
-        <div class="header-controls">
-            <div class="language-selector">
-                <label for="language-select" data-key="languageLabel">Wika/Language:</label>
-                <select id="language-select">
-                    <option value="en">English (EN)</option>
-                    <option value="tl">Tagalog (TL)</option>
-                </select>
-            </div>
-            
-            <div class="api-control-group">
-                <input type="password" id="admin-code-input" placeholder="Admin Code" title="Enter code to enable refresh">
-                <button id="fetch-data-btn" class="refresh-button disabled" data-key="fetchDataButton" disabled>
-                    FETCH SNAPSHOT (1 Request)
-                </button>
-            </div>
+        <h1 data-key="headerTitle">Bases Loaded: EV Strategy Dashboard</h1>
+        <div class="status-bar">
+            <span id="data-update-status">Data Last Updated: Never</span>
+            <span id="budget-status">API Budget: 0/500 Used</span>
         </div>
     </header>
 
-    <section id="best-play-panel">
-        <h2 data-key="bestPlayTitle">⭐ Best Value Play of the Day</h2>
-        <div id="best-play-card">
-            <p data-key="noBestPlay">Analyzing market for elite value...</p>
-        </div>
-    </section>
-
-    <section id="main-dashboard">
-        <h2 data-key="mainDashboardTitle">Today's Value Bets</h2>
-
-        <div class="controls-bar">
-            <div class="filter-group">
-                <label for="sort-select" data-key="sortLabel">Sort By:</label>
-                <select id="sort-select">
-                    <option value="default" data-key="sortDefault">Default (Time)</option>
-                    <option value="ev-desc" data-key="sortEV">EV (High to Low)</option>
-                    <option value="stake-desc" data-key="sortStake">Stake (High to Low)</option>
+    <main>
+        
+        <section class="top-row-controls">
+            
+            <div class="control-group">
+                <label data-key="langSelectLabel" for="language-select">Language:</label>
+                <select id="language-select">
+                    <option value="en">English</option>
+                    <option value="es">Español</option>
                 </select>
             </div>
-            <div class="filter-group">
-                <label data-key="filterLabel">Filter:</label>
-                <button id="filter-low-vig-btn" class="filter-btn" data-key="filterLowVig">Sharp Markets (Low VIG)</button>
-                <button id="filter-high-vig-btn" class="filter-btn" data-key="filterHighVig">Soft Markets (High VIG)</button>
-                <button id="filter-lineup-btn" class="filter-btn" data-key="filterLineup">Lineup Alerts</button>
-                <button id="filter-reset-btn" class="filter-btn active" data-key="filterReset">Show All</button>
+            
+            <div id="best-play-card" class="best-bet-panel">
+                <p data-key="noBestPlay">Analyzing for best play...</p>
             </div>
-        </div>
 
-        <div id="games-container" class="game-grid">
+            <div class="control-group">
+                <label data-key="adminCodeLabel" for="admin-code-input">Admin Code for API Fetch:</label>
+                <input type="password" id="admin-code-input" placeholder="Enter code">
+                <button id="fetch-data-btn" class="disabled" disabled data-key="fetchDataBtn">Fetch New Data</button>
             </div>
-    </section>
+            
+        </section>
+        
+        <hr>
 
-    <section id="manual-ev-section">
-        <h2 data-key="manualEVTitle">Manual EV Calculator</h2>
-        <div class="ev-calculator-inputs">
-            <div>
-                <label for="odds-input" data-key="inputOddsLabel">Book Odds (Decimal):</label>
-                <input type="number" id="odds-input" step="0.01" value="2.00">
+        <section id="games-section">
+            <h2 data-key="gamesHeader">Today's EV Games</h2>
+            <div id="games-container" class="games-grid">
+                <p data-key="loadingMessage">Loading EV data...</p>
             </div>
-            <div>
-                <label for="prob-input" data-key="inputProbLabel">Your Model Probability (%):</label>
-                <input type="number" id="prob-input" step="0.1" value="50.0">
+        </section>
+
+        <hr>
+
+        <section id="manual-calculator" class="calculator-panel">
+            <h2 data-key="manualCalcHeader">Manual EV/Prop Calculator (0 API Cost)</h2>
+            <p data-key="manualCalcInstructions">Use for Player Props or Alt Lines: Input Book Odds and Your Projected Probability.</p>
+            
+            <div class="calculator-inputs">
+                <div class="input-group">
+                    <label for="odds-input" data-key="oddsInputLabel">Book Odds (Decimal, e.g., 2.10)</label>
+                    <input type="number" id="odds-input" min="1.01" step="0.01" placeholder="2.00">
+                </div>
+                <div class="input-group">
+                    <label for="prob-input" data-key="probInputLabel">Your Probability (%)</label>
+                    <input type="number" id="prob-input" min="0" max="100" step="0.1" placeholder="55.0">
+                </div>
+                <button id="calculate-ev-btn" data-key="calculateBtn">Calculate EV</button>
             </div>
-            <button id="calculate-ev-btn" data-key="calculateButton">Calculate EV</button>
-        </div>
-        <div id="ev-calculator-output">
-            <p data-key="actionVerdictTitle" class="action-verdict-title">Action Verdict:</p>
-            <p class="action-verdict-result">
-                <span id="manual-action-verdict" class="verdict-neutral" data-key="verdictInput">Input Required</span>
-            </p>
-            <p>Calculated Expected Value (EV): <span id="manual-ev-result" class="ev-negative">0.00%</span></p>
-        </div>
-    </section>
 
-    <section id="portfolio-section">
-        <h2 data-key="portfolioTitle">EV Portfolio Simulation (Today)</h2>
-        <ul id="portfolio-list">
-            <li class="portfolio-empty" data-key="portfolioEmpty">Add +EV bets to your portfolio below.</li>
-        </ul>
-    </section>
+            <div class="calculator-results">
+                <span data-key="evResultLabel">EV:</span> <strong id="manual-ev-result">0.00%</strong>
+                <span data-key="actionVerdictLabel">Action:</span> <strong id="manual-action-verdict" class="verdict-neutral" data-key="verdictInput">Enter Values</strong>
+            </div>
+        </section>
 
-    <section id="daily-results-tracker">
-        <h2 data-key="dailyResultsTitle">🎯 Day-End Mock Results</h2>
-        <div class="tracker-action">
-            <button id="simulate-daily-results-btn" data-key="simulateButton">🎲 SIMULATE TODAY'S OUTCOMES</button>
-            <button id="reset-daily-tracker-btn" class="reset-button" data-key="resetButton">🔄 RESET ALL MOCK DATA</button>
-        </div>
-    </section>
+        <footer>
+            <p>Metrics: <span id="unique-visitors-count">0</span> Unique Visitors | <span id="total-views-count">0</span> Total Views</p>
+        </footer>
 
-    <section id="bankroll-chart-section">
-        <h2 data-key="chartTitle">📈 Simulated Bankroll Growth (Long-Term View)</h2>
-        <div class="chart-container">
-            <canvas id="bankrollGrowthChart"></canvas>
-        </div>
-    </section>
-    
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script> 
-    
-    <script src="translations.js"></script> 
-    <script src="mock_data.js"></script> 
+    </main>
+
+    <script src="mock_data.js"></script>
+    <script src="translations.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
